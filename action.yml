@@ -1,0 +1,204 @@
+
+## This is a SAMPLE metadata file for a GitHub Action.  For more info:
+##    https://help.github.com/en/articles/metadata-syntax-for-github-actions
+
+name: dotnet-tests-report
+author: EBekker
+description: |
+  Executes .NET (dotnet) tests within a GitHub Workflow
+  and produces Tests Report.
+
+## Here you describe your *formal* inputs -- those that are
+## documented and can be displayed by the marketplace.
+## You also use these to identify the *required* inputs.
+inputs:
+
+  test_results_path:
+    description: |
+      Path to the test results file which will be used to generate a report.
+      If this path is provided, it will override the invocation
+      of `dotnet test` so the **`project_path`** input and all
+      other inputs that drive test invocation behavior will be
+      ignored.  Instead a report will be generated based on the
+      results stored in the file pointed to by this path.
+      At this time, the only test results format supported is the
+      [Visual Studio Test Results (TRX)](https://docs.microsoft.com/en-us/visualstudio/test/vstest-console-options?view=vs-2019)
+      XML format.
+
+  project_path:
+    description: |
+      The project or solution file to operate on. If a file or
+      directory path is not specified, the command will assume
+      the project root path.
+    required: false
+
+  no_restore:
+    description:
+      When executing the unit tests against the `project_path`,
+      if this input parameter is `true`, do not restore the
+      project before building.
+    required: false
+
+  no_build:
+    description:
+      When executing the unit tests against the `project_path`,
+      if this input parameter is `true`, do not build the
+      project before executing tests.
+    required: false
+
+  msbuild_configuration:
+    description:
+      When executing the unit tests against the `project_path`,
+      this input parameter allows you to specify the configuration
+      passed to the msbuild process, such as `Release` or `Debug`.
+    required: false
+
+  msbuild_verbosity:
+    description:
+      When executing the unit tests against the `project_path`,
+      this input parameter allows you to specify the verbosity
+      level of the msbuild process. Allowed values are
+      q[uiet], m[inimal], n[ormal], d[etailed], and diag[nostic].
+    required: false
+
+  report_name:
+    description: |
+      The name of the report object that will be attached to the
+      Workflow Run.  Defaults to the name `TEST_RESULTS_<datetime>`
+      where `<datetime>` is in the form `yyyyMMdd_hhmmss`.
+
+  report_title:
+    description: |
+      The title of the report that will be embedded in the report
+      itself, which defaults to the same as the `report_name` input.
+
+  github_token:
+    description: |
+      GITHUB_TOKEN to authenticate against API calls to attach
+      report to Workflow Run.
+
+  skip_check_run:
+    description: |
+      If true, will skip attaching the Tests Result report to
+      the Workflow Run using a Check Run.  Useful if you just
+      want to produce a Gist-based report via the `gist_name`
+      and `gist_token` input parameters.
+
+  gist_name:
+    description: |
+      If this value is specified, the Test Results Report will be
+      attached as a version of a Gist under the name of this input.
+      The `gist_token` input is also required to use this feature.
+  
+  gist_badge_label:
+    description: |
+      If specified, the Test Report Gist will also include an adjacent
+      badge rendered with the status of the associated Test Report and
+      and label content of this input.  In addition to any static text
+      you can provide _escape tokens_ of the form `%name%` where name
+      can be the name of any field returned from a Pester Result, such
+      as `ExecutedAt` or `Result`.  If you want a literal percent, just
+      specify an empty name as in `%%`.
+  
+  gist_badge_message:
+    description: |
+      If Gist badge generation is enabled by providing a value for the
+      `gist_badge_label` input, this input allows you to override the
+      default message on the badge, which is equivalent to the the
+      Pester Result `Status` such as `Failed` or `Passed`.  As with the
+      label input, you can specify escape tokens in addition to literal
+      text.  See the label input description for more details.
+
+  gist_is_secret:
+    description: |
+      If true, will create the Tests Results Gist will be created as a
+      _secret_ Gist, otherwise it will be created as a public Gist.
+      Secret Gists can be changed to public, but public Gists cannot be
+      change to secret.  More details can be found
+      [here](https://docs.github.com/en/github/writing-on-github/creating-gists#about-gists).
+
+  gist_token:
+    description: |
+      GitHub OAuth/PAT token to be used for accessing Gist to store
+      test results report. The integrated GITHUB_TOKEN that is normally
+      accessible during a Workflow does not include read/write permissions
+      to associated Gists, therefore a separate token is needed.
+      You can control which account is used to actually store the state by
+      generating a token associated with the target account.
+
+  set_check_status_from_test_outcome:
+    description: |
+      If set to true, GitHub check status will be set to 'failure' 
+      if at least one test fails. If all tests pass then check status will 
+      be set to 'success'.
+
+  trx_xsl_path:
+    description: |
+      If specified, will override the default XSL transformation stylesheet
+      used to convert TRX input file to a Markdown report.
+
+  extra_test_parameters:
+    description: |
+      Useful for passing extra parameters to dotnet test. Eg,
+      '--filter category=unit'
+      
+  fail_build_on_failed_tests:
+    description: |
+      If set to true, the build will fail if at least one test fails      
+
+
+## Here you describe your *formal* outputs.
+outputs:
+
+  test_results_path:
+    description: |
+      Path to the test results file.  If the same-named input
+      was provided to this action, this value will be the same.
+      Otherwise, this will be the path to where the test results
+      file was generated from running the resolved dotnet tests.
+      At this time, the only test results format supported is the
+      [Visual Studio Test Results (TRX)](https://docs.microsoft.com/en-us/visualstudio/test/vstest-console-options?view=vs-2019)
+      XML format.
+
+  result_clixml_path:
+    description:
+      If a test_result_path was successfully produced by a test
+      invocation or one was passed in as an input, then this will
+      be the path to an export of the results summary in CLIXML
+      form. A subsequent PowerShell step can recover
+      this object using the `Import-Clixml` cmdlet.
+
+  result_value:
+    description: |
+      A single string indicating the final result such as
+      `Failed` or `Completed`.
+
+  gist_report_url:
+    description: |
+      If Gist-based Test Results were requested,
+      this will contain the URL to the Gist.
+
+  gist_badge_url:
+    description: |
+      If Gist-based Test Results were requested as well as a status badge,
+      this will contain the URL to the status badge.
+
+  total_count:
+    description: Total number of tests discovered.
+
+  passed_count:
+    description: Total number of tests passed.
+
+  failed_count:
+    description: Total number of tests failed.
+
+
+branding:
+  color: purple
+  icon: check-circle
+
+## Even though the Action logic may be implemented
+## in PWSH, we still need a NodeJS entry point
+runs:
+  using: node12
+  main: _init/index.js
